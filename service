@@ -1,13 +1,24 @@
 #!/usr/bin/env ruby
 
-require'yaml'
+require 'yaml'
+
+services = []
 
 class Service
-	attr_accessor :name, :description, :dns, :protocols, :port_in, :port_out, :command
-	def initialize(name)
+	attr_accessor :name, :description, :dns, :port_in, :port_out, :user
+	def initialize(name, user)
 		@name = name
-		@description = @dns = @protocols = @port_in = @port_out = @command = ""
-    end
+		@user = user
+		@description = @dns = @port_in = @port_out = ""
+	end
+
+	def to_s
+		return @name +
+		"\n  - " + @user +
+		( @description != ""  ? "\n  - " + @description : "" ) +
+		( @dns != ""  ? "\n  - " + @dns + ".busbagarde.space" : "" ) +
+		( @port_in != "" && @port_out != "" ? "\n  - " + @port_in.to_s + " -> " + @port_out.to_s : "" )
+	end
 end
 
 sudoers = File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",")
@@ -17,41 +28,78 @@ end
 
 users = [ "root" ] + sudoers
 
-
 users.each_entry { | user | 
 	home = ( user == "root" ) ? "/root/" : ("/home/" + user + "/")
 	file = home + ".services"
 
-	if File.readable?(file) && File.exists?(file)
-		configYaml = YAML.load_file(file)
-
-		configYaml.each_entry { | serviceYaml | 
-			service = Service.new(serviceYaml[0])
-
-			serviceYaml[1].each_entry { | valueYaml | 
-				case valueYaml[0].downcase
-				when "description"
-					service.description = valueYaml[1]
-				when "dns"
-					service.dns = valueYaml[1]
-				when "protocols"
-					service.protocols = valueYaml[1]
-				when "port_in"
-					service.port_in = valueYaml[1]
-				when "port_out"
-					service.port_out = valueYaml[1]
-				when "command"
-					service.command = valueYaml[1]
-				end
-			}
-
-			puts service.dns
-			
-		}
-		
+	if !File.readable?(file) || !File.exists?(file)
+		next
 	end
 
+	configYaml = YAML.load_file(file)
 
+	configYaml.each_entry { | serviceYaml | 
+		service = Service.new(serviceYaml[0], user)
+
+		serviceYaml[1].each_entry { | valueYaml | 
+			case valueYaml[0].downcase
+			when "description"
+				service.description = valueYaml[1]
+			when "dns"
+				service.dns = valueYaml[1]
+			when "port_in"
+				service.port_in = valueYaml[1]
+			when "port_out"
+				service.port_out = valueYaml[1]
+			end
+		}
+
+		disponible = true
+		services.each_entry { | serviceArray |
+			if(serviceArray.name == service.name)
+				puts "Le service " + serviceArray.name + " a déja été utilisé par " + serviceArray.user
+				disponible = false
+				break
+			end
+
+			if(serviceArray.dns == service.dns && serviceArray.port_in == service.port_in)
+				puts "Le port " + serviceArray.port_in.to_s + " est déja utilisé par le service " + serviceArray.name
+				disponible = false
+				break
+			end
+
+			if(serviceArray.port_out == service.port_out)
+				puts "Le port " + serviceArray.port_out.to_s + " est déja utilisé par le service " + serviceArray.name
+				disponible = false
+				break
+			end
+		}
+
+		if(disponible)
+			services.push(service)
+		end
+	}
+}
+
+services.each_entry { | service |
+	puts service.to_s
 }
 
 
+#sudo iptables -F
+
+#sudo iptables -P INPUT ACCEPT
+#sudo iptables -P OUTPUT ACCEPT
+
+#sudo iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+
+##sudo iptables -A OUTPUT -d busbagarde.space -p 22 -j ACCEPT
+###sudo iptables -A INPUT -d busbagarde.space -p 22 -j ACCEPT
+##sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+#sudo iptables -A OUTPUT -o lo -j ACCEPT
+#sudo iptables -A OUTPUT -d 192.168.0.0/24 -j ACCEPT
+#sudo iptables -A OUTPUT -d google.com -j ACCEPT
+
+#sudo iptables -P INPUT ACCEPT
+#sudo iptables -P OUTPUT DROP
