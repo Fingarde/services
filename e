@@ -1,0 +1,1 @@
+:name, :description, :dns, :protocols, :port_in, :port_out, :command

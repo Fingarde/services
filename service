@@ -1,31 +1,55 @@
 #!/usr/bin/env ruby
 
-class service
-	def initialize(rue)
-        @rue = rue
+require'yaml'
+
+class Service
+	attr_accessor :name, :description, :dns, :protocols, :port_in, :port_out, :command
+	def initialize(name)
+		@name = name
+		@description = @dns = @protocols = @port_in = @port_out = @command = ""
     end
 end
 
 sudoers = File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",")
-if sudoers[0] = " "
-	sudoers = ["etud/tibertrand1"]
+if sudoers[0] == " "
+	sudoers = []
 end
 
 users = [ "root" ] + sudoers
 
+
 users.each_entry { | user | 
-	 home = ( user == "root" ) ? "/root/" : ("/home/" + user + "/")
-	    file = home + ".services"
+	home = ( user == "root" ) ? "/root/" : ("/home/" + user + "/")
+	file = home + ".services"
 
-	 	if File.readable?(file) && File.exists?(file)
-	 		servicesFile = File.open(file)
+	if File.readable?(file) && File.exists?(file)
+		configYaml = YAML.load_file(file)
 
-	 		servicesFile.each_line { | line | 
-	 			if line.include?("<service>")
-	 				puts "oui"
-	 			end
-	 		}
-	 	end
+		configYaml.each_entry { | serviceYaml | 
+			service = Service.new(serviceYaml[0])
+
+			serviceYaml[1].each_entry { | valueYaml | 
+				case valueYaml[0].downcase
+				when "description"
+					service.description = valueYaml[1]
+				when "dns"
+					service.dns = valueYaml[1]
+				when "protocols"
+					service.protocols = valueYaml[1]
+				when "port_in"
+					service.port_in = valueYaml[1]
+				when "port_out"
+					service.port_out = valueYaml[1]
+				when "command"
+					service.command = valueYaml[1]
+				end
+			}
+
+			puts service.dns
+			
+		}
+		
+	end
 
 
 }
