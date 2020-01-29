@@ -1,21 +1,33 @@
 #!/usr/bin/env ruby
 
-
-
+class service
+	def initialize(rue)
+        @rue = rue
+    end
+end
 
 sudoers = File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",")
 if sudoers[0] = " "
-	sudoers = []
+	sudoers = ["etud/tibertrand1"]
 end
 
 users = [ "root" ] + sudoers
 
-for user in users
-    home = ( user == "root" ) ? "/root/" : ("/home/" + user + "/")
-    file = home + ".service"
+users.each_entry { | user | 
+	 home = ( user == "root" ) ? "/root/" : ("/home/" + user + "/")
+	    file = home + ".services"
 
- 	if File.readable?(home + file) && File.exits?(home + file)
- 		service = File.open(home + file)
- 	end
-end
+	 	if File.readable?(file) && File.exists?(file)
+	 		servicesFile = File.open(file)
+
+	 		servicesFile.each_line { | line | 
+	 			if line.include?("<service>")
+	 				puts "oui"
+	 			end
+	 		}
+	 	end
+
+
+}
+
 
