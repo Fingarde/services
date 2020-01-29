@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
-users = [ "root", File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",") ]
+users = [ "root" ] + File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",")
 
 for user in users
-    puts user
+    home = ( user == "root" ) ? "/root" : ("/home/" + user)
+    puts home
 end    
