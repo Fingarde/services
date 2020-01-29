@@ -1,7 +1,21 @@
 #!/usr/bin/env ruby
-users = [ "root" ] + File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",")
+
+
+
+
+sudoers = File.open("/etc/group").grep(/sudo/)[0].split(":").last.split(",")
+if sudoers[0] = " "
+	sudoers = []
+end
+
+users = [ "root" ] + sudoers
 
 for user in users
-    home = ( user == "root" ) ? "/root" : ("/home/" + user)
-    puts home
-end    
+    home = ( user == "root" ) ? "/root/" : ("/home/" + user + "/")
+    file = home + ".service"
+
+ 	if File.readable?(home + file) && File.exits?(home + file)
+ 		service = File.open(home + file)
+ 	end
+end
+
