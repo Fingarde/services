@@ -11,7 +11,7 @@ class Service
 		@user = user
 		@description = @dns = @port_in = @port_out = ""
 	end
-
+ 
 	def to_s
 		return @name +
 		"\n  - " + @user +

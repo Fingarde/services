@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+require 'open-uri'
+
+ip = open( 'https://ipinfo.io/ip').read
+
+puts ip
+
+require 'net/http'
+require 'uri'
+
+uri = URI.parse("http://www.ovh.com/nic/update?system=dyndns&hostname=oui.busbagarde.space&myip=" + ip)
+request = Net::HTTP::Get.new(uri)
+request.basic_auth("busbagarde.space.username", "password")
+
+req_options = {
+  use_ssl: uri.scheme == "https",
+}
+
+response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+  http.request(request)
+end
+
+puts response.body
+# response.code
+# response.body
